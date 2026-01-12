@@ -1,54 +1,66 @@
 import express from "express";
 import dotenv from "dotenv";
-import { MongoClient, ObjectId } from "mongodb";
-import bodyParser from "body-parser";
+import { MongoClient } from "mongodb";
 import cors from "cors";
 
-dotenv.config()
+dotenv.config();
 
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-// Connecting to the MongoDB Client
-const url = process.env.MONGO_URI;
-const client = new MongoClient(url);
-client.connect();
+// ✅ Middleware
+app.use(express.json());
+app.use(cors());
 
-// App & Database
-const dbName = process.env.DB_NAME 
-const app = express()
-const port = 3000 
+// ✅ ENV validation
+const MONGO_URI = process.env.MONGO_URI;
+const DB_NAME = process.env.DB_NAME;
 
-// Middleware
-app.use(bodyParser.json())
-app.use(cors())
+if (!MONGO_URI || !DB_NAME) {
+  console.error("❌ MONGO_URI or DB_NAME missing in .env file");
+  process.exit(1);
+}
 
+// ✅ MongoDB connection
+const client = new MongoClient(MONGO_URI);
+let collection;
 
-// Get all the passwords
-app.get('/', async (req, res) => {
-    const db = client.db(dbName);
-    const collection = db.collection('passwords');
-    const findResult = await collection.find({}).toArray();
-    res.json(findResult)
-})
+async function connectDB() {
+  try {
+    await client.connect();
+    const db = client.db(DB_NAME);
+    collection = db.collection("passwords");
+    console.log("✅ MongoDB Connected");
+  } catch (err) {
+    console.error("❌ MongoDB connection failed", err);
+    process.exit(1);
+  }
+}
 
-// Save a password
-app.post('/', async (req, res) => { 
-    const password = req.body
-    const db = client.db(dbName);
-    const collection = db.collection('passwords');
-    const findResult = await collection.insertOne(password);
-    res.send({success: true, result: findResult})
-})
+connectDB();
 
-// Delete a password by id
-app.delete('/', async (req, res) => { 
-    const password = req.body
-    const db = client.db(dbName);
-    const collection = db.collection('passwords');
-    const findResult = await collection.deleteOne(password);
-    res.send({success: true, result: findResult})
-})
+// ================= ROUTES =================
 
+// GET all passwords
+app.get("/", async (req, res) => {
+  const data = await collection.find({}).toArray();
+  res.json(data);
+});
 
-app.listen(port, () => {
-    console.log(`Example app listening on  http://localhost:${port}`)
-})
+// SAVE password
+app.post("/", async (req, res) => {
+  await collection.insertOne(req.body);
+  res.json({ success: true });
+});
+
+// DELETE password by id
+app.delete("/", async (req, res) => {
+  const { id } = req.body;
+  await collection.deleteOne({ id });
+  res.json({ success: true });
+});
+
+// ================= SERVER =================
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+});

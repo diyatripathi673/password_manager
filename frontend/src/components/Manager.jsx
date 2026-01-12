@@ -12,7 +12,7 @@ const Manager = () => {
   const [passwordArray, setPasswordArray] = useState([]);
 
   const getPasswords = async () => {
-    let req = await fetch("https://password-manager-two-olive.vercel.app/");
+    let req = await fetch("http://localhost:3000/");
     let passwords = await req.json();
 
     setPasswordArray(passwords);
@@ -54,7 +54,7 @@ const Manager = () => {
       form.username.length > 3 &&
       form.password.length > 3
     ) {
-      await fetch("https://password-manager-two-olive.vercel.app/", {
+      await fetch("http://localhost:3000/", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: form.id }),
@@ -64,7 +64,7 @@ const Manager = () => {
 
       setPasswordArray([...passwordArray, newPassword]);
 
-      await fetch("https://password-manager-two-olive.vercel.app/", {
+      await fetch("http://localhost:3000/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newPassword),
@@ -96,7 +96,7 @@ const Manager = () => {
       // localStorage.setItem("passwords", JSON.stringify(passwordArray.filter(item=>item.id!==id)))
 
       const newPassword = { id: id };
-      let res = await fetch("https://password-manager-two-olive.vercel.app/", {
+      let res = await fetch("http://localhost:3000/", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newPassword),
